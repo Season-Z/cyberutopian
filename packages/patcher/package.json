@@ -19,8 +19,7 @@
     "build:analyze": "builder --tool --analyze",
     "build:w": "builder --tool --watch",
     "lint": "eslint --ext .tsx,.ts src/",
-    "prettier": "prettier --write ./src",
-    "release": "npm publish --registry=https://nexus.shuyilink.com/repository/npm-group"
+    "prettier": "prettier --write ./src"
   },
   "keywords": [
     "cli"

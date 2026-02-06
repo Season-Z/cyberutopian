@@ -1,0 +1,47 @@
+{
+  "name": "@cyberutopian/iconer",
+  "version": "1.0.2",
+  "description": "",
+  "main": "./dist/index.js",
+  "bin": {
+    "iconer": "./dist/index.js"
+  },
+  "keywords": [
+    "svg"
+  ],
+  "files": [
+    "dist/*"
+  ],
+  "author": "zhouxishun",
+  "license": "ISC",
+  "scripts": {
+    "build": "builder --tool",
+    "build:analyze": "builder --tool --analyze",
+    "build:w": "builder --tool --watch",
+    "lint": "eslint --ext .tsx,.ts src/",
+    "prettier": "prettier --write ./src"
+  },
+  "dependencies": {
+    "@types/inquirer": "^9.0.1",
+    "axios": "^0.27.2",
+    "chalk": "3.0.0",
+    "commander": "^9.4.0",
+    "inquirer": "8.2.4",
+    "log-symbols": "4.1.0",
+    "ora": "5.4.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@cyberutopian/builder": "workspace:^",
+    "@cyberutopian/logger": "workspace:^",
+    "@types/commander": "^2.12.2",
+    "@types/node": "^18.7.15",
+    "@types/react": "^18.0.17",
+    "@types/react-dom": "^18.0.6",
+    "@vitejs/plugin-react": "^2.1.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.6.4",
+    "vite": "^3.1.0"
+  }
+}
