@@ -1,0 +1,41 @@
+{
+  "name": "@cyberutopian/type-definer",
+  "version": "0.0.4",
+  "description": "",
+  "main": "./dist/index.js",
+  "bin": {
+    "typing": "./dist/index.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "start": "builder",
+    "build": "builder --tool",
+    "build:analyze": "builder --tool --analyze",
+    "build:w": "builder --tool --watch",
+    "lint": "eslint --ext .tsx,.ts src/",
+    "prettier": "prettier --write ./src"
+  },
+  "keywords": [],
+  "author": "zhouxishun",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.8",
+    "commander": "^12.1.0",
+    "dayjs": "^1.11.19",
+    "js-yaml": "^4.1.0",
+    "ora": "^8.1.1",
+    "prettier": "^3.4.2",
+    "swagger2openapi": "^7.0.8"
+  },
+  "devDependencies": {
+    "@cyberutopian/builder": "workspace:^",
+    "@cyberutopian/logger": "workspace:^",
+    "@types/chalk": "^2.2.4",
+    "@types/js-yaml": "^4.0.9"
+  }
+}

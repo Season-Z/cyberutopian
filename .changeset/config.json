@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [],
+  "linked": [],
+  "access": "restricted",
+  "baseBranch": "master",
+  "updateInternalDependencies": "patch",
+  "ignore": [],
+  "changes": [
+    {
+      "type": "patch",
+      "package": "@shuyi/linker"
+    },
+    {
+      "type": "patch",
+      "package": "@shuyi/logger"
+    }
+  ]
+}

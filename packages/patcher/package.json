@@ -1,0 +1,45 @@
+{
+  "name": "@cyberutopian/patcher",
+  "version": "0.0.1",
+  "description": "",
+  "main": "dist/index.cjs",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "patcher": "./dist/index.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "start": "builder",
+    "build": "builder --tool",
+    "build:analyze": "builder --tool --analyze",
+    "build:w": "builder --tool --watch",
+    "lint": "eslint --ext .tsx,.ts src/",
+    "prettier": "prettier --write ./src",
+    "release": "npm publish --registry=https://nexus.shuyilink.com/repository/npm-group"
+  },
+  "keywords": [
+    "cli"
+  ],
+  "author": "zhouxishun",
+  "license": "ISC",
+  "dependencies": {
+    "@cyberutopian/builder": "workspace:^",
+    "@cyberutopian/logger": "workspace:^",
+    "axios": "^1.7.8",
+    "commander": "^12.1.0",
+    "cross-spawn": "^7.0.6",
+    "fs-extra": "^10.1.0",
+    "ora": "^8.1.1",
+    "semver": "^7.6.3"
+  },
+  "devDependencies": {
+    "@types/cross-spawn": "^6.0.6",
+    "@types/fs-extra": "^9.0.13",
+    "@types/semver": "^7.5.8"
+  }
+}

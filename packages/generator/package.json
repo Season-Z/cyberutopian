@@ -1,0 +1,31 @@
+{
+  "name": "@cyberutopian/generator",
+  "version": "0.0.0",
+  "description": "",
+  "main": "./dist/index.js",
+  "bin": {
+    "gen": "./dist/index.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "start": "builder",
+    "build": "builder --tool",
+    "build:analyze": "builder --tool --analyze",
+    "build:w": "builder --tool --watch",
+    "lint": "eslint --ext .tsx,.ts src/",
+    "prettier": "prettier --write ./src",
+    "release": "npm publish --registry=https://nexus.shuyilink.com/repository/npm-group"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@cyberutopian/builder": "workspace:^",
+    "@cyberutopian/logger": "workspace:^",
+    "inquirer": "^12.4.1",
+    "ora": "^8.1.1",
+    "prettier": "^3.4.2"
+  }
+}

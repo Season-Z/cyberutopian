@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.prod.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@cyberutopian/logger": ["packages/logger/src/index.ts"],
+      "@cyberutopian/builder": ["packages/builder/src/index.ts"],
+      "@cyberutopian/patcher": ["packages/patcher/src/index.ts"],
+      "@cyberutopian/ui-definer": ["packages/ui-definer/src/index.ts"],
+      "@cyberutopian/type-definer": ["packages/type-definer/src/index.ts"],
+      "@cyberutopian/generator": ["packages/generator/src/index.ts"]
+    }
+  }
+}

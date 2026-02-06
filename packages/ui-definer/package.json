@@ -1,0 +1,35 @@
+{
+  "name": "@cyberutopian/ui-definer",
+  "version": "1.0.1",
+  "description": "",
+  "main": "./dist/index.js",
+  "bin": {
+    "ui": "./dist/index.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "start": "builder",
+    "build": "builder --tool",
+    "build:analyze": "builder --tool --analyze",
+    "build:w": "builder --tool --watch",
+    "lint": "eslint --ext .tsx,.ts src/",
+    "prettier": "prettier --write ./src",
+    "release": "npm publish --registry=https://nexus.shuyilink.com/repository/npm-group"
+  },
+  "keywords": [],
+  "author": "zhouxishun",
+  "license": "ISC",
+  "dependencies": {
+    "@cyberutopian/builder": "workspace:^",
+    "@cyberutopian/logger": "workspace:^",
+    "axios": "^1.7.8",
+    "commander": "^12.1.0",
+    "fs-extra": "^10.1.0",
+    "ora": "^8.1.1"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^9.0.13"
+  }
+}
