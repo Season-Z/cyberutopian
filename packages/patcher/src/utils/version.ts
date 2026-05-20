@@ -16,10 +16,21 @@ export const spinner = (text: string = '操作中...') =>
     },
   });
 
+const getNpmRegistryPackageUrl = (packageName: string) => {
+  return `https://registry.npmjs.org/${encodeURIComponent(packageName)}`;
+};
+
 const latestVersion = async (packageName: string, isBeta?: boolean) => {
-  const response = await axios.get(`https://nexus.shuyilink.com/repository/npm-group/${packageName}`, {
+  const response = await axios.get(getNpmRegistryPackageUrl(packageName), {
     timeout: 3000 * 10,
   });
+
+  const distTags = response.data?.['dist-tags'];
+  const latestDistTag = distTags?.[isBeta ? 'beta' : 'latest'];
+  if (latestDistTag) {
+    return latestDistTag;
+  }
+
   const versionsList = Object.keys(response.data.versions);
   for (let i = versionsList.length - 1; i >= 0; i--) {
     if (isBeta) {
