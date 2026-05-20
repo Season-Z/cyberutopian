@@ -1,6 +1,6 @@
 {
   "name": "@cyberutopian/request",
-  "version": "0.0.5",
+  "version": "0.0.12",
   "description": "request 请求",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

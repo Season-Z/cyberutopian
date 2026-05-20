@@ -8,62 +8,168 @@ import { PROJECT_ROOT } from './config';
 import { generator } from './core/generator';
 import { getSwagger, swaggerToOpenApi } from './core/get-swagger';
 import { entry } from './template/entry';
-import { SwaggerJson, TypingEntryType } from './types';
-import { getConfigFile, majorVersionsCheck, replaceSpecialChars, spinner } from './utils';
+import { SwaggerJson, TypingConfig, TypingEntryType } from './types';
+import {
+  getConfigFile,
+  majorVersionsCheck,
+  replaceSpecialChars,
+  spinner,
+} from './utils';
 
-const task = async (u: TypingEntryType, index: number, token?: string) => {
-  // eslint-disable-next-line no-async-promise-executor
-  return new Promise(async (resolve, reject) => {
-    let input: SwaggerJson;
+type TypeTaskConfig = {
+  url: TypingEntryType;
+  dirs: string[];
+  token?: string;
+};
 
-    const search = spinner('正在获取swagger文件...').start();
-    try {
-      const url = typeof u === 'string' ? u : u.url;
+type TypeTaskResult = Awaited<ReturnType<typeof generator>> & {
+  name: string;
+};
 
-      // 确保 url 是有效的字符串
-      if (typeof url !== 'string' || !url.trim()) {
-        throw new Error(`Invalid url: ${url}, expected non-empty string`);
-      }
+const toArray = <T>(value?: T | T[]) => {
+  if (Array.isArray(value)) {
+    return value;
+  }
 
-      input = await getSwagger(url, token);
-      search.succeed('数据获取成功');
+  if (value === undefined || value === null) {
+    return [];
+  }
 
-      // @ts-ignore
-      const { openapi, info } = input;
+  return [value];
+};
 
-      Logger.info(`openapi version: ${openapi}`);
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
 
-      console.log('');
-      console.info('------ info start --------');
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === 'string' && Boolean(value.trim());
 
-      console.info(`url: ${url}`);
-      console.info(`title: ${info?.title}`);
-      console.info(`doc version: ${info?.version}`);
+const isValidTypingEntry = (value: TypingEntryType) => {
+  return typeof value === 'string'
+    ? isNonEmptyString(value)
+    : isNonEmptyString(value.url);
+};
 
-      console.info('------ info end --------');
-      console.log('');
+const getTypesConfigs = (cfg: unknown): TypingConfig[] => {
+  const configs = Array.isArray(cfg) ? cfg : [cfg];
 
-      if (input.swagger) {
-        majorVersionsCheck('2.0.0', input.swagger);
-        // convert swagger v2 to openApi v3
-        input = await swaggerToOpenApi(input);
-      } else if (input.openapi) {
-        majorVersionsCheck('3.0.0', input.openapi);
-      } else {
-        // input = yaml.load(await postmanToOpenApi(JSON.stringify(input), undefined)) as SwaggerJson;
-      }
-
-      const regex = /api-docs\/([^/]+)/;
-      const name = typeof u === 'string' ? url.match(regex)?.[1] || index || 'base_api' : u.name;
-
-      const data = await generator(input, name);
-
-      resolve({ ...data, name });
-    } catch (error) {
-      Logger.error(error as string);
-      reject(error);
+  return configs.reduce<TypingConfig[]>((prev, item) => {
+    if (!isRecord(item)) {
+      return prev;
     }
-  });
+
+    const types = item.types as TypingConfig | TypingConfig[] | undefined;
+
+    if (types) {
+      return [...prev, ...toArray(types)];
+    }
+
+    if ('url' in item || 'dir' in item) {
+      return [...prev, item as TypingConfig];
+    }
+
+    return prev;
+  }, []);
+};
+
+const getTypesFieldName = (
+  field: 'url' | 'dir',
+  index: number,
+  total: number,
+) => {
+  return total > 1 ? `types[${index}].${field}` : `types.${field}`;
+};
+
+const getTypeTaskConfigs = (typeConfigs: TypingConfig[]) => {
+  return typeConfigs.reduce<TypeTaskConfig[]>(
+    (prev, { url: urls, dir, token }, index) => {
+      const urlList = toArray(urls);
+      const dirs = toArray(dir);
+
+      if (!urlList.length || urlList.some((url) => !isValidTypingEntry(url))) {
+        Logger.error(
+          `请确认 ${chalk.yellow(getTypesFieldName('url', index, typeConfigs.length))} 是否存在`,
+        );
+        process.exit(-1);
+      }
+
+      if (!dirs.length || dirs.some((dir) => !isNonEmptyString(dir))) {
+        Logger.error(
+          `请确认 ${chalk.yellow(getTypesFieldName('dir', index, typeConfigs.length))} 是否存在`,
+        );
+        process.exit(-1);
+      }
+
+      return [
+        ...prev,
+        ...urlList.map((url) => ({
+          url,
+          dirs: [...new Set(dirs)],
+          token,
+        })),
+      ];
+    },
+    [],
+  );
+};
+
+const task = async (
+  u: TypingEntryType,
+  index: number,
+  token?: string,
+): Promise<TypeTaskResult> => {
+  let input: SwaggerJson;
+
+  const search = spinner('正在获取swagger文件...').start();
+  try {
+    const url = typeof u === 'string' ? u : u.url;
+
+    // 确保 url 是有效的字符串
+    if (typeof url !== 'string' || !url.trim()) {
+      throw new Error(`Invalid url: ${url}, expected non-empty string`);
+    }
+
+    input = await getSwagger(url, token);
+    search.succeed('数据获取成功');
+
+    // @ts-ignore
+    const { openapi, info } = input;
+
+    Logger.info(`openapi version: ${openapi}`);
+
+    console.log('');
+    console.info('------ info start --------');
+
+    console.info(`url: ${url}`);
+    console.info(`title: ${info?.title}`);
+    console.info(`doc version: ${info?.version}`);
+
+    console.info('------ info end --------');
+    console.log('');
+
+    if (input.swagger) {
+      majorVersionsCheck('2.0.0', input.swagger);
+      // convert swagger v2 to openApi v3
+      input = await swaggerToOpenApi(input);
+    } else if (input.openapi) {
+      majorVersionsCheck('3.0.0', input.openapi);
+    } else {
+      // input = yaml.load(await postmanToOpenApi(JSON.stringify(input), undefined)) as SwaggerJson;
+    }
+
+    const regex = /api-docs\/([^/]+)/;
+    const name =
+      typeof u === 'string'
+        ? url.match(regex)?.[1] || String(index || 'base_api')
+        : u.name || String(index || 'base_api');
+
+    const data = await generator(input, name);
+
+    return { ...data, name };
+  } catch (error) {
+    Logger.error(error as string);
+    throw error;
+  }
 };
 
 export const run = async (typing: boolean) => {
@@ -77,16 +183,15 @@ export const run = async (typing: boolean) => {
   }
 
   const cfg = getConfigFile();
-  const { url: urls, dir, token } = cfg?.types || {};
+  const typeConfigs = getTypesConfigs(cfg);
 
-  if (!urls) {
-    Logger.error(`请确认 ${chalk.yellow('types.url')} 是否存在`);
+  if (!typeConfigs.length) {
+    Logger.error(`请确认 ${chalk.yellow('types')} 是否存在`);
     process.exit(-1);
   }
 
-  const url = Array.isArray(urls) ? urls : [urls];
-
-  const dirs = typeof dir === 'string' ? [dir] : dir;
+  const taskConfigs = getTypeTaskConfigs(typeConfigs);
+  const dirs = [...new Set(taskConfigs.flatMap(({ dirs }) => dirs))];
 
   dirs.forEach((item: string) => {
     const d = path.join(PROJECT_ROOT, item);
@@ -98,7 +203,9 @@ export const run = async (typing: boolean) => {
     }
   });
 
-  const tasks = await Promise.allSettled(url.map((u: TypingEntryType, i: number) => task(u, i, token)));
+  const tasks = await Promise.allSettled(
+    taskConfigs.map(({ url, token }, i) => task(url, i, token)),
+  );
 
   for (const [index, item] of tasks.entries()) {
     if (item.status === 'rejected') {
@@ -106,17 +213,17 @@ export const run = async (typing: boolean) => {
       process.exit(-1);
     }
 
-    const { value } = item as any;
+    const { value } = item;
 
-    for (const d of dirs) {
+    for (const d of taskConfigs[index].dirs) {
       fs.writeFileSync(
-        `${d}/services-${replaceSpecialChars(value?.name || index)}.ts`,
+        `${d}/services-${replaceSpecialChars(value?.name || String(index))}.ts`,
         await prettier.format(value.code, { parser: 'typescript' }),
       );
       Logger.success(chalk.yellowBright('services 生成成功'));
 
       fs.writeFileSync(
-        `${d}/types-${replaceSpecialChars(value?.name || index)}.ts`,
+        `${d}/types-${replaceSpecialChars(value?.name || String(index))}.ts`,
         await prettier.format(value.type, { parser: 'typescript' }),
       );
       Logger.success(chalk.yellowBright('types 生成成功'));
@@ -124,7 +231,13 @@ export const run = async (typing: boolean) => {
   }
 
   for (const d of dirs) {
-    fs.writeFileSync(`${d}/index.ts`, await prettier.format(entry(tasks), { parser: 'typescript' }));
+    const dirTasks = tasks.filter((_task, index) =>
+      taskConfigs[index].dirs.includes(d),
+    );
+    fs.writeFileSync(
+      `${d}/index.ts`,
+      await prettier.format(entry(dirTasks), { parser: 'typescript' }),
+    );
     Logger.success(chalk.yellowBright('index 生成成功'));
     console.log(`位置：${d}`);
   }

@@ -1,5 +1,5 @@
-import { requestInstance } from '..';
-import type { FetchRequestConfig, FetchResponse } from './interface';
+import { requestInstance } from "..";
+import type { FetchRequestConfig, FetchResponse } from "./interface";
 
 /**
  * @description: 函数的描述
@@ -9,7 +9,15 @@ import type { FetchRequestConfig, FetchResponse } from './interface';
  * @returns {Promise}
  */
 const syFetch = <D = any, T = any>(config: FetchRequestConfig<D, T>) => {
-  return requestInstance?.request<D, FetchResponse<T>>(config) as Promise<FetchResponse<T>>;
+  if (!requestInstance) {
+    return Promise.reject(
+      new Error(
+        "Request instance is not configured. Call setup(request) first.",
+      ),
+    );
+  }
+
+  return requestInstance.request<D, FetchResponse<T>>(config);
 };
 
 export default syFetch;

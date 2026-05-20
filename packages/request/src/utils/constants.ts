@@ -1,60 +1,85 @@
-import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import type { ErrorLevelMap } from '../core/interface';
+import type { AxiosError, InternalAxiosRequestConfig } from "axios";
+import type { ErrorLevelMap } from "../core/interface";
 
 const clientId = Math.floor(Math.random() * 1000000000000000) + Date.now();
 
 export { clientId };
 //# sourceMappingURL=constants.mjs.map
 
+const getStorage = (
+  type: "localStorage" | "sessionStorage",
+): Storage | undefined => {
+  if (typeof globalThis === "undefined") {
+    return undefined;
+  }
+
+  const root = globalThis as typeof globalThis & {
+    localStorage?: Storage;
+    sessionStorage?: Storage;
+  };
+  return root[type];
+};
+
 export const getTokenHead = () => {
-  return localStorage.getItem('tokenHeand');
+  return getStorage("localStorage")?.getItem("tokenHeand") ?? null;
 };
 
 export function getAutoLogin() {
-  return localStorage.getItem('autoLogin') === 'true' || (localStorage.getItem('autoLogin') === null && !!localStorage.getItem('token')); // 不影响线上之前记住登录的情况
+  const localStorage = getStorage("localStorage");
+  return (
+    localStorage?.getItem("autoLogin") === "true" ||
+    (localStorage?.getItem("autoLogin") === null &&
+      !!localStorage?.getItem("token"))
+  ); // 不影响线上之前记住登录的情况
 }
 
 export const getToken = () => {
-  return getAutoLogin() ? localStorage.getItem('token') : sessionStorage.getItem('token');
+  return getAutoLogin()
+    ? (getStorage("localStorage")?.getItem("token") ?? null)
+    : (getStorage("sessionStorage")?.getItem("token") ?? null);
 };
 
 export function getRefreshToken() {
-  return (getAutoLogin() ? localStorage.getItem('refreshToken') : sessionStorage.getItem('refreshToken')) || '';
+  return (
+    (getAutoLogin()
+      ? getStorage("localStorage")?.getItem("refreshToken")
+      : getStorage("sessionStorage")?.getItem("refreshToken")) || ""
+  );
 }
 
 export const getTenementCode = () => {
-  return localStorage.getItem('tenement-code');
+  return getStorage("localStorage")?.getItem("tenement-code") ?? null;
 };
 
 export const getSystemLanguage = () => {
-  return localStorage.getItem('systemLanguage');
+  return getStorage("localStorage")?.getItem("systemLanguage") ?? null;
 };
 
 export function getErrorMessage(error: AxiosError): string {
-  let message = '未知错误';
+  let message = "未知错误";
 
-  if (error.message.includes('Network Error')) {
-    message = '网络连接失败';
-  } else if (error.message.includes('timeout of')) {
-    message = '请求服务器数据超时';
-  } else if (error.code === 'ECONNABORTED') {
-    message = '请求超时，请检查网络连接';
+  if (error.message.includes("Network Error")) {
+    message = "网络连接失败";
+  } else if (error.message.includes("timeout of")) {
+    message = "请求服务器数据超时";
+  } else if (error.code === "ECONNABORTED") {
+    message = "请求超时，请检查网络连接";
   }
 
   return message;
 }
 
 export const ERROR_LEVEL_MAP: ErrorLevelMap = {
-  0: 'error',
-  1: 'warning',
-  2: 'info',
+  0: "error",
+  1: "warning",
+  2: "info",
 };
 
 export const ERR_CODE_DETAIL_MAP: ErrorLevelMap = {
-  4001: '未知错误，请联系管理员。',
-  4002: '命名空间不存在，请创建后使用！',
-  4003: '存在不合规的图片，请检查！',
-  4004: '人脸识别失败，请重试！',
+  4001: "未知错误，请联系管理员。",
+  4002: "命名空间不存在，请创建后使用！",
+  4003: "存在不合规的图片，请检查！",
+  4004: "人脸识别失败，请重试！",
   // 5000: (res) => {
   //   DialogBox.confirm(res.message, $t('hint'), {
   //     showClose: false,
