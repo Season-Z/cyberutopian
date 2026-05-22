@@ -2,7 +2,8 @@ type DataType = 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object'
 
 export type TypingEntryType =
   | {
-      url: string;
+      url?: string;
+      file?: string;
       name?: string;
       branch?: string;
     }
@@ -11,6 +12,7 @@ export type TypingEntryType =
 export interface TypingConfig {
   apiHost?: string;
   url?: TypingEntryType | TypingEntryType[];
+  file?: TypingEntryType | TypingEntryType[];
   token?: string;
   dir?: string | string[];
 }
@@ -207,6 +209,7 @@ export interface InfoObject {
 export interface FileConfig {
   apiHost?: string;
   url?: TypingEntryType | TypingEntryType[];
+  file?: TypingEntryType | TypingEntryType[];
   token?: string;
   dir: string | string[];
   /**

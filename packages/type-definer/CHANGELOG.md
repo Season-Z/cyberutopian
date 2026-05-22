@@ -1,5 +1,17 @@
 # @cyberutopian/type-definer
 
+## 0.0.7
+
+### Patch Changes
+
+- up
+
+## 0.0.6
+
+### Patch Changes
+
+- 支持openapi生成ts
+
 ## 0.0.5
 
 ### Patch Changes

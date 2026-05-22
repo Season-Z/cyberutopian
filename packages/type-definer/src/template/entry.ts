@@ -1,16 +1,25 @@
 import { replaceSpecialChars } from '@/utils';
 
-export const entry = (tasks: PromiseSettledResult<unknown>[]) => {
-  const imports = tasks.map((v: any) => {
-    const name = replaceSpecialChars(v.value.name);
-    return `import { createFetch as createFetch_${name}, createHookFetch as createHookFetch_${name} } from './services-${name}';\n`;
+export type EntryTask = {
+  name: string;
+  importPath?: string;
+};
+
+export const entry = (tasks: EntryTask[]) => {
+  const imports = tasks.map(({ name: _name, importPath }) => {
+    const name = replaceSpecialChars(_name);
+    return `import { createFetch as createFetch_${name}, createHookFetch as createHookFetch_${name} } from '${importPath || `./services-${name}`}';\n`;
   });
-  const modules = tasks.map((v: any) => {
-    const name = replaceSpecialChars(v.value.name);
+  const modules = tasks.map(({ name: _name }) => {
+    const name = replaceSpecialChars(_name);
     return `const syFetch_${name} = createFetch_${name}();\n const useSyFetch_${name} = createHookFetch_${name}();\n`;
   });
-  const combineFn = tasks.map((v: any) => `...syFetch_${replaceSpecialChars(v.value.name)},`);
-  const combineHook = tasks.map((v: any) => `...useSyFetch_${replaceSpecialChars(v.value.name)},`);
+  const combineFn = tasks.map(
+    ({ name }) => `...syFetch_${replaceSpecialChars(name)},`,
+  );
+  const combineHook = tasks.map(
+    ({ name }) => `...useSyFetch_${replaceSpecialChars(name)},`,
+  );
 
   return `
     /**
