@@ -1,5 +1,12 @@
 # @cyberutopian/request
 
+## 0.0.13
+
+### Patch Changes
+
+- Fix generated declaration entry collision by making the package root the single public entry source.
+- update
+
 ## 0.0.12
 
 ### Patch Changes
