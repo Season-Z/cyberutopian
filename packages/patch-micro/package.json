@@ -1,0 +1,47 @@
+{
+  "name": "@cyberutopian/patch-micro",
+  "version": "0.0.2",
+  "description": "Framework-agnostic micro frontend authentication and lifecycle runtime",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "start": "builder",
+    "build": "builder --build",
+    "build:analyze": "builder --build --analyze",
+    "build:w": "builder --build --watch",
+    "test": "pnpm build && node --import tsx --test tests/*.test.ts",
+    "test:dist": "node scripts/check-dist.cjs",
+    "typecheck": "tsc -p tsconfig.test.json --noEmit",
+    "lint": "pnpm typecheck && prettier --check src tests scripts",
+    "check": "pnpm lint && pnpm test && pnpm test:dist",
+    "prettier": "prettier --write src tests scripts"
+  },
+  "keywords": [
+    "micro-frontend",
+    "micro-runtime",
+    "authentication",
+    "qiankun"
+  ],
+  "author": "zhouxishun",
+  "license": "ISC",
+  "devDependencies": {
+    "@cyberutopian/builder": "workspace:^",
+    "@types/node": "^22.9.3",
+    "tsx": "4.23.1"
+  }
+}

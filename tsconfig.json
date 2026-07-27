@@ -8,6 +8,7 @@
       "@cyberutopian/patcher": ["packages/patcher/src/index.ts"],
       "@cyberutopian/ui-definer": ["packages/ui-definer/src/index.ts"],
       "@cyberutopian/type-definer": ["packages/type-definer/src/index.ts"],
+      "@cyberutopian/patch-micro": ["packages/patch-micro/src/index.ts"],
       "@cyberutopian/generator": ["packages/generator/src/index.ts"]
     }
   }
