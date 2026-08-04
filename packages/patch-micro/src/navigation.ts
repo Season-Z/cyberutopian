@@ -28,6 +28,13 @@ export interface StandaloneShellLoginOptions extends ShellRedirectPathOptions {
   redirectParam?: string;
 }
 
+export interface ShellAuthBridgeUrlOptions {
+  shellEntry: string;
+  targetOrigin: string;
+  currentPath?: string;
+  bridgePath?: string;
+}
+
 const getBrowserLocation = (): BrowserLocationLike | undefined => {
   if (typeof window === "undefined") {
     return undefined;
@@ -85,7 +92,11 @@ const normalizeOrigin = (value?: string) => {
 
   try {
     const url = new URL(value);
-    if (url.protocol !== "http:" && url.protocol !== "https:") {
+    if (
+      (url.protocol !== "http:" && url.protocol !== "https:") ||
+      url.username ||
+      url.password
+    ) {
       return "";
     }
 
@@ -174,4 +185,25 @@ export const createStandaloneShellLoginUrl = (
   );
 
   return loginUrl.toString();
+};
+
+export const createShellAuthBridgeUrl = ({
+  shellEntry,
+  targetOrigin,
+  currentPath,
+  bridgePath = "/auth/bridge",
+}: ShellAuthBridgeUrlOptions) => {
+  const shellOrigin = normalizeOrigin(shellEntry);
+  const childOrigin = normalizeOrigin(targetOrigin);
+  if (!shellOrigin || !childOrigin || !isLocalPath(bridgePath)) {
+    return "";
+  }
+
+  const route = parseLocalRoute(currentPath);
+  const returnTo = `${route.pathname}${route.search}${route.hash}`;
+  const bridgeUrl = new URL(bridgePath, shellOrigin);
+  bridgeUrl.searchParams.set("target_origin", childOrigin);
+  bridgeUrl.searchParams.set("return_to", returnTo);
+
+  return bridgeUrl.toString();
 };

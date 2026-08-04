@@ -20,6 +20,166 @@ const createRawToken = (accessToken: string) =>
     refresh_token: "server-only-in-future",
   });
 
+const createMemoryStorage = () => {
+  const values = new Map<string, string>();
+
+  return {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      values.set(key, value);
+    },
+    removeItem: (key: string) => {
+      values.delete(key);
+    },
+    values,
+  };
+};
+
+test("reads an access-token-first host contract without a token parser", () => {
+  let listener: ((state: MicroAppGlobalState) => void) | undefined;
+  let expiredPath = "";
+  const runtime = createMicroAuthRuntime();
+
+  runtime.setProps({
+    getAccessToken: () => "host-access-token",
+    onAccessTokenExpired: (path) => {
+      expiredPath = path || "";
+    },
+    onGlobalStateChange: (nextListener) => {
+      listener = nextListener;
+    },
+  });
+
+  assert.equal(runtime.getAccessToken(), "host-access-token");
+  listener?.({ accessToken: "updated-access-token" });
+  assert.equal(runtime.getAccessToken(), "updated-access-token");
+  assert.equal(runtime.notifyAuthExpired("/device/list"), true);
+  assert.equal(expiredPath, "/device/list");
+});
+
+test("exchanges a standalone bridge ticket and stores only the access token", async () => {
+  const storage = createMemoryStorage();
+  const replacedUrls: string[] = [];
+  const requestedUrls: string[] = [];
+  const runtime = createMicroAuthRuntime({
+    shellEntry: "https://mid-test.patch-x.cn/maintenance",
+    getCurrentUrl: () =>
+      "http://cyberutopian.local:5173/device/list?__patch_micro_ticket=one-time&page=2#row-8",
+    replaceCurrentUrl: (url) => {
+      replacedUrls.push(url);
+    },
+    storage,
+    fetch: async (url, init) => {
+      requestedUrls.push(url);
+      assert.equal(init?.method, "POST");
+      assert.deepEqual(JSON.parse(String(init?.body)), { ticket: "one-time" });
+
+      return {
+        ok: true,
+        json: async () => ({
+          code: 0,
+          data: {
+            access_token: "standalone-access-token",
+            return_to: "/device/list?page=2#row-8",
+          },
+        }),
+      };
+    },
+  });
+
+  assert.equal(await runtime.prepare(), true);
+  assert.equal(runtime.getAccessToken(), "standalone-access-token");
+  assert.deepEqual(requestedUrls, [
+    "https://mid-test.patch-x.cn/api/v1/user/login/micro/ticket/exchange",
+  ]);
+  assert.deepEqual(replacedUrls, [
+    "http://cyberutopian.local:5173/device/list?page=2#row-8",
+  ]);
+  assert.equal(
+    [...storage.values.values()].some((value) => value.includes("refresh")),
+    false,
+  );
+});
+
+test("redirects standalone access to the shell bridge and preserves the local route", async () => {
+  const navigations: string[] = [];
+  const runtime = createMicroAuthRuntime({
+    shellEntry: "https://mid-test.patch-x.cn/maintenance",
+    getCurrentUrl: () =>
+      "http://cyberutopian.local:5173/device/list?page=2#row-8",
+    navigate: (url) => {
+      navigations.push(url);
+    },
+    storage: createMemoryStorage(),
+  });
+
+  assert.equal(await runtime.prepare(), false);
+  assert.deepEqual(navigations, [
+    "https://mid-test.patch-x.cn/auth/bridge?target_origin=http%3A%2F%2Fcyberutopian.local%3A5173&return_to=%2Fdevice%2Flist%3Fpage%3D2%23row-8",
+  ]);
+});
+
+test("does not prepare an unauthenticated standalone app without a shell entry", async () => {
+  const runtime = createMicroAuthRuntime();
+
+  runtime.setProps({});
+
+  assert.equal(await runtime.prepare(), false);
+  assert.equal(runtime.getAccessToken(), "");
+});
+
+test("does not send a bridge ticket to an external exchange path", async () => {
+  let requests = 0;
+  const runtime = createMicroAuthRuntime({
+    shellEntry: "https://mid-test.patch-x.cn/maintenance",
+    ticketExchangePath: "https://evil.example/exchange",
+    getCurrentUrl: () =>
+      "http://cyberutopian.local:5173/device/list?__patch_micro_ticket=one-time",
+    replaceCurrentUrl: () => undefined,
+    navigate: () => undefined,
+    fetch: async () => {
+      requests += 1;
+      return { ok: true, json: async () => ({}) };
+    },
+  });
+
+  assert.equal(await runtime.prepare(), false);
+  assert.equal(requests, 0);
+});
+
+test("clears standalone access and single-flights bridge redirects after 401", async () => {
+  const storage = createMemoryStorage();
+  const navigations: string[] = [];
+  let currentUrl =
+    "http://cyberutopian.local:5173/device/list?__patch_micro_ticket=temporary";
+  const runtime = createMicroAuthRuntime({
+    shellEntry: "https://mid-test.patch-x.cn/maintenance",
+    getCurrentUrl: () => currentUrl,
+    replaceCurrentUrl: (url) => {
+      currentUrl = url;
+    },
+    navigate: (url) => {
+      navigations.push(url);
+    },
+    storage,
+    fetch: async () => ({
+      ok: true,
+      json: async () => ({
+        code: 0,
+        data: { access_token: "temporary-token", return_to: "/device/list" },
+      }),
+    }),
+  });
+
+  runtime.setProps({});
+  assert.equal(await runtime.prepare(), true);
+  assert.equal(runtime.notifyAuthExpired("/device/list"), true);
+  assert.equal(runtime.notifyAuthExpired("/device/list"), false);
+  assert.equal(runtime.getAccessToken(), "");
+  assert.equal(storage.values.size, 0);
+  assert.equal(navigations.length, 1);
+});
+
 test("reads a host token and never invokes deprecated token writers", () => {
   let setCalls = 0;
   let clearCalls = 0;

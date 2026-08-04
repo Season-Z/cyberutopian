@@ -5,6 +5,7 @@ import test from "node:test";
 const require = createRequire(import.meta.url);
 const {
   createBrowserCallbackUrl,
+  createShellAuthBridgeUrl,
   createShellRedirectPath,
   createStandaloneShellLoginUrl,
   getCurrentRedirectPath,
@@ -155,6 +156,25 @@ test("is safe when browser globals are unavailable", () => {
   assert.equal(getCurrentRedirectPath(), "/");
   assert.equal(
     createBrowserCallbackUrl({ callbackPath: "/login/callback" }),
+    "",
+  );
+});
+
+test("rejects credential-bearing shell and child origins", () => {
+  assert.equal(
+    createShellAuthBridgeUrl({
+      shellEntry: "https://user:password@mid-test.patch-x.cn/maintenance",
+      targetOrigin: "http://cyberutopian.local:5173",
+      currentPath: "/device/list",
+    }),
+    "",
+  );
+  assert.equal(
+    createShellAuthBridgeUrl({
+      shellEntry: "https://mid-test.patch-x.cn/maintenance",
+      targetOrigin: "http://user:password@cyberutopian.local:5173",
+      currentPath: "/device/list",
+    }),
     "",
   );
 });

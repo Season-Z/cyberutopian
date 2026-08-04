@@ -10,26 +10,17 @@ pnpm add @cyberutopian/patch-micro
 
 ## 创建认证 Runtime
 
-宿主 token 的格式由消费工程决定。下面示例兼容 Maintenance 当前使用的 JSON token，但公共包本身不了解该结构。
+宿主只向子应用提供 Access Token。直接运行子应用时，runtime 会通过远程基座的一次性票据恢复会话；子应用不保存 Refresh Token，也不实现登录回调。
 
 ```ts
 import { createMicroAuthRuntime } from "@cyberutopian/patch-micro";
 
 const authRuntime = createMicroAuthRuntime({
-  parseAccessToken: (rawToken) => {
-    try {
-      const token = JSON.parse(rawToken) as { access_token?: unknown };
-      return typeof token.access_token === "string" ? token.access_token : "";
-    } catch {
-      return "";
-    }
-  },
-  getStandaloneAccessToken: () => getLocalAccessToken(),
-  onStandaloneAuthExpired: (redirectPath) => {
-    window.location.replace(createProjectLoginUrl(redirectPath));
-  },
+  shellEntry: import.meta.env.VITE_HOST_APP_ENTRY,
 });
 ```
+
+qiankun mount 时 runtime 优先读取 `getAccessToken` 与全局 `accessToken`。standalone mount 时 `createMicroLifecycle` 会等待 `runtime.prepare()`：它从 sessionStorage 恢复 Access Token，或兑换 URL 中的 `__patch_micro_ticket`；两者都不存在时，安全跳转到基座 `/auth/bridge`。
 
 请求层只读取 access token，并在 401 时通知 runtime。默认 1.5 秒内只有第一次通知会触发登录跳转。
 
@@ -95,11 +86,12 @@ if (!qiankunWindow.__POWERED_BY_QIANKUN__) {
 
 ## 安全回跳
 
-动态 callback 必须从当前 Origin 生成，不要写死开发域名或接受外部 redirect。
+动态 callback 和基座认证桥 URL 必须从可信 Origin 生成，不要接受外部 redirect。
 
 ```ts
 import {
   createBrowserCallbackUrl,
+  createShellAuthBridgeUrl,
   createStandaloneShellLoginUrl,
 } from "@cyberutopian/patch-micro";
 
@@ -112,9 +104,15 @@ const shellLoginUrl = createStandaloneShellLoginUrl({
   shellActiveRule: "/maintenance",
   currentPath: `${location.pathname}${location.search}${location.hash}`,
 });
+
+const authBridgeUrl = createShellAuthBridgeUrl({
+  shellEntry: "https://portal.example.com/maintenance",
+  targetOrigin: window.location.origin,
+  currentPath: `${location.pathname}${location.search}${location.hash}`,
+});
 ```
 
-`createStandaloneShellLoginUrl` 会保留 query/hash，并拒绝完整外部 URL、`//host/path`、非法 shell Origin 和非法登录路径。
+这些工具会保留 query/hash，并拒绝完整外部 URL、`//host/path`、反斜杠、非法 shell Origin 和非法登录路径。
 
 ## 宿主 Props 契约
 
@@ -122,7 +120,7 @@ const shellLoginUrl = createStandaloneShellLoginUrl({
 
 - `basename`、`routerBase`、`container`
 - `shellName`、`shellTitle`
-- `getAuthToken`、`onAuthExpired`
+- `getAccessToken`、`onAccessTokenExpired`
 - `onGlobalStateChange`、`offGlobalStateChange`
 
-`setAuthToken` 与 `clearAuthToken` 仅为迁移兼容保留并已标记为 deprecated。子应用不应修改宿主认证状态。
+全局状态使用 `accessToken`。`getAuthToken`、`token`、`parseAccessToken`、`setAuthToken` 与 `clearAuthToken` 仅为一个迁移周期兼容保留并已标记为 deprecated。子应用不应修改宿主认证状态。

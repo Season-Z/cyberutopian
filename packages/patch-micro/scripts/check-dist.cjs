@@ -6,6 +6,7 @@ const expectedExports = [
   "createBrowserCallbackUrl",
   "createMicroAuthRuntime",
   "createMicroLifecycle",
+  "createShellAuthBridgeUrl",
   "createShellRedirectPath",
   "createStandaloneShellLoginUrl",
   "getCurrentRedirectPath",

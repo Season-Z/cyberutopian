@@ -50,6 +50,31 @@ test("syncs props before mount and update and resets after unmount", async () =>
   ]);
 });
 
+test("waits for auth preparation and skips rendering when navigation starts", async () => {
+  const calls: string[] = [];
+  const lifecycle = createMicroLifecycle({
+    authRuntime: {
+      setProps: () => {
+        calls.push("props");
+      },
+      prepare: async () => {
+        calls.push("prepare");
+        return false;
+      },
+      reset: () => {
+        calls.push("reset");
+      },
+    },
+    mount: () => {
+      calls.push("mount");
+    },
+  });
+
+  await lifecycle.mount({});
+
+  assert.deepEqual(calls, ["props", "prepare"]);
+});
+
 test("rolls back auth state when mount fails", async () => {
   let resets = 0;
   const lifecycle = createMicroLifecycle({

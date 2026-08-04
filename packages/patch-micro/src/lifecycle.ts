@@ -4,6 +4,7 @@ export interface MicroLifecycleAuthRuntime<
   TProps extends MicroAppProps = MicroAppProps,
 > {
   setProps: (props: TProps) => void;
+  prepare?: () => Awaitable<boolean | void>;
   reset: () => void;
 }
 
@@ -45,6 +46,10 @@ export const createMicroLifecycle = <
   mount: async (props) => {
     try {
       options.authRuntime?.setProps(props);
+      const ready = await options.authRuntime?.prepare?.();
+      if (ready === false) {
+        return;
+      }
       await options.mount(props);
     } catch (error) {
       resetWithoutMaskingError(options.authRuntime);
